@@ -35,6 +35,12 @@ begin
 			begin
 				while true do
 				begin
+					if FileExists('assets/' + JMD5Ext.AsString) then
+					begin
+						WriteLn('[' + ID + '] Skipped ' + JMD5Ext.AsString);
+						break;
+					end;
+
 					FS := TFileStream.Create('assets/' + JMD5Ext.AsString, fmCreate or fmOpenWrite);
 					try TFPHttpClient.SimpleGet('https://cdn.assets.scratch.mit.edu/internalapi/asset/' + JMD5Ext.AsString + '/get', FS);
 					except
@@ -102,11 +108,12 @@ end;
 
 procedure CrawlProjectGet(ID : String);
 var
-	JData, JToken, JDate : TJSONData;
+	JData, JToken, JDate, JMeta : TJSONData;
 	JStr : String;
-	MetaJSON : TextFile;
+	MetaJSON, InfoJSON : TextFile;
 	DT : TDateTime;
 	BadDT : TDateTime;
+	JObj : TJSONObject;
 begin
 	while true do
 	begin
@@ -134,10 +141,21 @@ begin
 				CreateDir('projects/' + ID);
 				CreateDir('projects/' + ID + '/' + JDate.AsString);
 
-				AssignFile(MetaJSON, 'projects/' + ID + '/' + JDate.AsString + '/metadata.json');
+				AssignFile(MetaJSON, 'projects/' + ID + '/' + JDate.AsString + '/info.json');
 				Rewrite(MetaJSON);
 				Write(MetaJSON, JStr);
 				CloseFile(MetaJSON);
+
+				JMeta := GetJSON('{}');
+				JObj := JMeta as TJSONObject;
+				JObj.Add('scarpedAt', DateToISO8601(Now()));
+
+				AssignFile(InfoJSON, 'projects/' + ID + '/' + JDate.AsString + '/metadata.json');
+				Rewrite(InfoJSON);
+				Write(InfoJSON, JObj.AsJSON);
+				CloseFile(InfoJSON);
+
+				JMeta.Free();
 
 				WriteLn('[' + ID + '] Got project token');
 				CrawlProjectGet(ID, JDate.AsString, JToken.AsString);
