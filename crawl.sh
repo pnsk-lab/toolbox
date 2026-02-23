@@ -3,7 +3,8 @@
 
 . ./crawl.conf
 
-export CRAWL_HOSTNAME
+export CRAWL_SOLR_HOSTNAME
+export CRAWL_SOLR_PORT
 export CRAWL_PORT
 
 if [ "x$1" = "xcrawl" -o "x$1" = "x" ]; then

@@ -19,7 +19,7 @@ begin
 	InitSSLInterface();
 
 {$ifdef DATABASE}
-	CrawlDatabaseConnect(GetEnv('CRAWL_HOSTNAME'), GetEnv('CRAWL_PORT'));
+	CrawlDatabaseConnect(GetEnv('CRAWL_SOLR_HOSTNAME'), GetEnv('CRAWL_SOLR_PORT'));
 {$endif}
 
 	while I < ParamCount do
