@@ -32,18 +32,19 @@ begin
 			JMD5Ext := JIteration.FindPath('md5ext');
 			if Assigned(JMD5Ext) then
 			begin
-				FS := TFileStream.Create('assets/' + JMD5Ext.AsString, fmCreate or fmOpenWrite);
-				WriteLn('[' + ID + '] Got ' + Copy(IterationName, 0, Length(IterationName) - 1) + ' ' + JMD5Ext.AsString);
 				while true do
 				begin
+					FS := TFileStream.Create('assets/' + JMD5Ext.AsString, fmCreate or fmOpenWrite);
 					try TFPHttpClient.SimpleGet('https://cdn.assets.scratch.mit.edu/internalapi/asset/' + JMD5Ext.AsString + '/get', FS);
 					except
 						WriteLn('[' + ID + '] Failed to get ' + JMD5Ext.AsString + ' - retrying');
+						FS.Free();
 						continue;	
 					end;
+					FS.Free();
 					break;
 				end;
-				FS.Free();
+				WriteLn('[' + ID + '] Got ' + Copy(IterationName, 0, Length(IterationName) - 1) + ' ' + JMD5Ext.AsString);
 			end;
 		end;
 	end;
