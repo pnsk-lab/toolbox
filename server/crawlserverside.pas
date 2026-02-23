@@ -86,6 +86,7 @@ end;
 function Expression(Vars : TStringMap; Expr : String) : Integer;
 var
 	Arr : TStringArray;
+	ArrResult : String;
 begin
 	Expression := 0;
 
@@ -95,11 +96,15 @@ begin
 	begin
 		if Copy(Arr[0], 1, 1) = '$' then
 		begin
-			if not(Vars.TryGetData(Copy(Arr[0], 2), Arr[0])) then Arr[0] := '';
+			ArrResult := '';
+			Vars.TryGetData(Copy(Arr[0], 2), ArrResult);
+			Arr[0] := ArrResult;
 		end;
 		if Copy(Arr[2], 1, 1) = '$' then
 		begin
-			if not(Vars.TryGetData(Copy(Arr[2], 2), Arr[2])) then Arr[2] := '';
+			ArrResult := '';
+			Vars.TryGetData(Copy(Arr[2], 2), ArrResult);
+			Arr[2] := ArrResult;
 		end;
 
 		if Arr[1] = '=' then
@@ -139,7 +144,6 @@ begin
 		end;
 	end;
 
-	Res.Content := '';
 	SetLength(Lines, 0);
 	repeat
 		ReadLn(TF, LineStr);
@@ -221,9 +225,9 @@ begin
 			begin
 				Vars[GetCommandArgument(Arr, 'var')] := GetCommandArgument(Arr, 'value');
 			end
-			else if (Arr[0] = 'iclude') and (Length(Arr) = 2) then
+			else if (Arr[0] = 'include') and (Length(Arr) = 2) then
 			begin
-				CrawlServerSideProcess(Req, Res, GetCommandArgument(Arr, 'file'));
+				CrawlServerSideProcess(Req, Res, ExtractFilePath(FileName) + GetCommandArgument(Arr, 'file'));
 			end;
 		end
 		else

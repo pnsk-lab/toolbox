@@ -18,6 +18,7 @@ begin
 	Path := 'dynamic/index.html';
 
 	Res.ContentType := CrawlServerExtensionGet(Path);
+	Res.Content := '';
 	CrawlServerSideProcess(Req, Res, Path);
 end;
 

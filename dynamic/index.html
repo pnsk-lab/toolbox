@@ -32,20 +32,25 @@
 					<div id="nav">
 						<div class="linkgrouptitle">Crawl</div>
 						<div class="linkgroup">
-							<a href="/">Home</a>
+							<a href="/">Home</a><br>
+							<a href="/search">Search</a>
 						</div>
 					</div>
 				</td>
 				<td valign="top">
 					<div id="content">
-						<div class="section">News</div>
+						<!--#if expr="$TITLE = 'Home'" -->
+						<!--#include file="home.html" -->
+						<!--#elif expr="$TITLE = 'Not Found'" -->
+						<!--#include file="404.html" -->
+						<!--#endif -->
 					</div>
 				</td>
 			</tr>
 		</table>
 		<center>
 			Copyright &copy; 2026 pnsk-lab. All rights reserved.
-		</centeR>
+		</center>
 		<!--[if lte IE 6]>
 		<script language="javascript" type="text/javascript">
 			for(i = 0; i < document.images.length; i++){

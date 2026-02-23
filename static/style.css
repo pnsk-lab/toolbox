@@ -58,3 +58,7 @@ a:hover, #breadcrumb a:hover {
 .linkgrouptitle {
 	font-weight: bold;
 }
+
+#content p {
+	padding-left: 8px;
+}
