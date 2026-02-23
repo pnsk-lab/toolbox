@@ -20,7 +20,7 @@ type
 
 const
 	MaxLimits : Integer = 20;
-	MaxThreads : Integer = 64;
+	MaxThreads : Integer = 32;
 
 var
 	Finished : Integer;
