@@ -15,7 +15,7 @@ uses
 procedure CrawlUserGet(UserName : String);
 var
 	JStr : String;
-	JData, JItem : TJSONData;
+	JData, JItem, JID : TJSONData;
 	N : Integer;
 	I : Integer;
 begin
@@ -35,8 +35,12 @@ begin
 		for I := 0 to JData.Count - 1 do
 		begin
 			JItem := JData.Items[I];
+			JID := JItem.FindPath('id');
 
-			CrawlProjectGet(JItem.FindPath('id').AsString);
+			if Assigned(JID) then
+			begin
+				CrawlProjectGet(JID.AsString);
+			end;
 		end;
 
 		JData.Free();
