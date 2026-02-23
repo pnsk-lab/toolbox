@@ -9,7 +9,10 @@ crawl/crawl$(E): crawl/*.pas
 	fpc -Mobjfpc -Sh $(PCFLAGS) -e$@ crawl/crawl.pas
 
 server/crawlserver$(E): server/*.pas
-	@echo "$(PCFLAGS)" | grep -- "-dDATABASE" >/dev/null 2>&1 ; if [ "$$?" = "0" ]; then fpc -Mobjfpc -Sh $(PCFLAGS) -e$@ server/crawlserver.pas ; fi
+	@echo "$(PCFLAGS)" | grep -- "-dDATABASE" >/dev/null 2>&1 ; if [ "$$?" = "0" ]; then \
+		echo "fpc -Mobjfpc -Sh $(PCFLAGS) -e$@ server/crawlserver.pas" ; \
+		fpc -Mobjfpc -Sh $(PCFLAGS) -e$@ server/crawlserver.pas ; \
+	fi
 
 clean:
 	rm -f */*.ppu */*.o */*.exe crawl/crawl server/crawlserver

@@ -1,4 +1,6 @@
 /crawl/crawl
+/server/crawlserver
+*.exe
 *.o
 *.ppu
 /data
