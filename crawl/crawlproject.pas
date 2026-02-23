@@ -41,7 +41,7 @@ begin
 						break;
 					end;
 
-					FS := TFileStream.Create('assets/' + JMD5Ext.AsString, fmCreate or fmOpenWrite);
+					FS := TFileStream.Create('assets/' + JMD5Ext.AsString, fmCreate or fmOpenWrite or fmShareExclusive);
 					try TFPHttpClient.SimpleGet('https://cdn.assets.scratch.mit.edu/internalapi/asset/' + JMD5Ext.AsString + '/get', FS);
 					except
 						WriteLn('[' + ID + '] Failed to get ' + JMD5Ext.AsString + ' - retrying');
