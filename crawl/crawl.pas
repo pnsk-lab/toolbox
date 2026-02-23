@@ -1,6 +1,9 @@
 program crawl;
 
 uses
+{$ifdef unix}
+	cthreads,
+{$endif}
 	CrawlProject,
 	CrawlUser,
 	sysutils;
