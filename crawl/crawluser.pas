@@ -5,12 +5,12 @@ procedure CrawlUserGet(UserName : String);
 
 implementation
 uses
-	CrawlProject,
 	fphttpclient,
 	opensslsockets,
 	fpjson,
 	jsonparser,
-	sysutils;
+	sysutils,
+	CrawlProject;
 
 type
 	TThreadParams = record
@@ -58,13 +58,13 @@ begin
 	begin
 		while true do
 		begin
-			try JStr := TFPHttpClient.SimpleGet('https://api.scratch.mit.edu/users/' + UserName + '/projects?limits=' + IntToStr(MaxLimits) + '&offset=' + IntToStr(N));
+			try JStr := TFPHTTPClient.SimpleGet('https://api.scratch.mit.edu/users/' + UserName + '/projects?limits=' + IntToStr(MaxLimits) + '&offset=' + IntToStr(N));
 			except
 				continue;
 			end;
 			break;
 		end;
-		JData := GetJSON(JStr);
+		JData := GetJSON(JStr, false);
 
 		if JData.Count = 0 then
 		begin

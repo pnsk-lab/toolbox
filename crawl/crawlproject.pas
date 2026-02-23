@@ -1,7 +1,7 @@
 unit CrawlProject;
 
 interface
-procedure CrawlProjectGet(ID : String; DT : String; Token: String);
+function CrawlProjectGet(ID : String; DT : String; Token: String) : boolean;
 procedure CrawlProjectGet(ID : String);
 
 implementation
@@ -12,7 +12,8 @@ uses
 	jsonparser,
 	sysutils,
 	classes,
-	dateutils;
+	dateutils,
+	CrawlDatabase;
 
 procedure ProjectTargetIteration(ID : String; JTarget : TJSONData; IterationName : String);
 var
@@ -42,7 +43,7 @@ begin
 					end;
 
 					FS := TFileStream.Create('assets/' + JMD5Ext.AsString, fmCreate or fmOpenWrite or fmShareExclusive);
-					try TFPHttpClient.SimpleGet('https://cdn.assets.scratch.mit.edu/internalapi/asset/' + JMD5Ext.AsString + '/get', FS);
+					try TFPHTTPClient.SimpleGet('https://cdn.assets.scratch.mit.edu/internalapi/asset/' + JMD5Ext.AsString + '/get', FS);
 					except
 						WriteLn(StdErr, '[' + ID + '] Failed to get ' + JMD5Ext.AsString + ' - retrying');
 						FS.Free();
@@ -63,23 +64,29 @@ begin
 	ProjectTargetIteration(ID, JTarget, 'sounds');
 end;
 
-procedure CrawlProjectGet(ID : String; DT : String; Token: String);
+function CrawlProjectGet(ID : String; DT : String; Token: String) : boolean;
 var
 	JStr : String;
 	JData, JTargets, JTarget : TJSONData;
 	ProjectJSON : TextFile;
 	I : Integer;
 begin
+	CrawlProjectGet := true;
 	while true do
 	begin
-		try JStr := TFPHttpClient.SimpleGet('https://projects.scratch.mit.edu/' + ID + '?token=' + Token);
+		try JStr := TFPHTTPClient.SimpleGet('https://projects.scratch.mit.edu/' + ID + '?token=' + Token);
 		except
 			WriteLn(StdErr, '[' + ID + '] Failed to get project.json - retrying');
 			continue;	
 		end;
 		break;
 	end;
-	JData := GetJSON(JStr);
+	try
+		JData := GetJSON(JStr, false);
+	except
+		CrawlProjectGet := false;
+		Exit();
+	end;
 
 	WriteLn(StdErr, '[' + ID + '] Got project.json');
 
@@ -116,17 +123,19 @@ var
 	JObj : TJSONObject;
 	FS : TFileStream;
 	Skip : Boolean;
+	Entry : TCrawlDatabaseEntry;
+	N : Integer;
 begin
 	while true do
 	begin
-		try JStr := TFPHttpClient.SimpleGet('https://api.scratch.mit.edu/projects/' + ID);
+		try JStr := TFPHTTPClient.SimpleGet('https://api.scratch.mit.edu/projects/' + ID);
 		except
 			WriteLn(StdErr, '[' + ID + '] Failed to get project token - retrying');
 			continue;
 		end;
 		break;
 	end;
-	JData := GetJSON(JStr);
+	JData := GetJSON(JStr, false);
 
 	TryISOStrToDateTime('2026-01-22T00:00Z', BadDT);
 
@@ -165,22 +174,78 @@ begin
 
 				if not(Skip) then
 				begin
+					JObj := JData as TJSONObject;
+
+					N := 0;
+					if Assigned(JObj.FindPath('id')) then
+					begin
+						Entry.ProjectID := JObj.Integers['id'];
+						N := N + 1;
+					end;
+					if Assigned(JObj.FindPath('title')) then
+					begin
+						Entry.Title := JObj.Strings['title'];
+						N := N + 1;
+					end;
+					if Assigned(JObj.FindPath('description')) then
+					begin
+						Entry.Description := JObj.Strings['description'];
+						N := N + 1;
+					end;
+					if Assigned(JObj.FindPath('instructions')) then
+					begin
+						Entry.Instructions := JObj.Strings['instructions'];
+						N := N + 1;
+					end;
+					if Assigned(JObj.FindPath('author.id')) then
+					begin
+						Entry.AuthorID := JObj.Objects['author'].Integers['id'];
+						N := N + 1;
+					end;
+					if Assigned(JObj.FindPath('author.username')) then
+					begin
+						Entry.AuthorName := JObj.Objects['author'].Strings['username'];
+						N := N + 1;
+					end;
+					if Assigned(JObj.FindPath('history.modified')) then
+					begin
+						Entry.Timestamp := JObj.Objects['history'].Strings['modified'];
+						N := N + 1;
+					end;
+
 					AssignFile(MetaJSON, 'projects/' + ID + '/' + JDate.AsString + '/info.json');
 					Rewrite(MetaJSON);
 					Write(MetaJSON, JStr);
 					CloseFile(MetaJSON);
 
 					WriteLn(StdErr, '[' + ID + '] Got project token');
-					CrawlProjectGet(ID, JDate.AsString, JToken.AsString);
+					if CrawlProjectGet(ID, JDate.AsString, JToken.AsString) then
+					begin
+						if N = 7 then
+						begin
+							CrawlDatabaseAdd(Entry);
+						end;
 
-					JMeta := GetJSON('{}');
-					JObj := JMeta as TJSONObject;
-					JObj.Add('scrapedAt', DateToISO8601(Now()));
+						JMeta := GetJSON('{}');
+						JObj := JMeta as TJSONObject;
+						JObj.Add('scrapedAt', DateToISO8601(Now()));
 
-					AssignFile(InfoJSON, 'projects/' + ID + '/' + JDate.AsString + '/metadata.json');
-					Rewrite(InfoJSON);
-					Write(InfoJSON, JObj.AsJSON);
-					CloseFile(InfoJSON);
+						AssignFile(InfoJSON, 'projects/' + ID + '/' + JDate.AsString + '/metadata.json');
+						Rewrite(InfoJSON);
+						Write(InfoJSON, JObj.AsJSON);
+						CloseFile(InfoJSON);
+					end
+					else
+					begin
+						JMeta := GetJSON('{}');
+						JObj := JMeta as TJSONObject;
+						JObj.Add('notFound', true);
+
+						AssignFile(InfoJSON, 'projects/' + ID + '/' + JDate.AsString + '/metadata.json');
+						Rewrite(InfoJSON);
+						Write(InfoJSON, JObj.AsJSON);
+						CloseFile(InfoJSON);
+					end;
 
 					JMeta.Free();
 				end;
