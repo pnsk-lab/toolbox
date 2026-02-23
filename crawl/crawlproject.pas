@@ -108,12 +108,14 @@ end;
 
 procedure CrawlProjectGet(ID : String);
 var
-	JData, JToken, JDate, JMeta : TJSONData;
+	JData, JToken, JDate, JMeta, JMetaFound : TJSONData;
 	JStr : String;
 	MetaJSON, InfoJSON : TextFile;
 	DT : TDateTime;
 	BadDT : TDateTime;
 	JObj : TJSONObject;
+	FS : TFileStream;
+	Skip : Boolean;
 begin
 	while true do
 	begin
@@ -141,24 +143,47 @@ begin
 				CreateDir('projects/' + ID);
 				CreateDir('projects/' + ID + '/' + JDate.AsString);
 
-				AssignFile(MetaJSON, 'projects/' + ID + '/' + JDate.AsString + '/info.json');
-				Rewrite(MetaJSON);
-				Write(MetaJSON, JStr);
-				CloseFile(MetaJSON);
+				Skip := false;
 
-				JMeta := GetJSON('{}');
-				JObj := JMeta as TJSONObject;
-				JObj.Add('scarpedAt', DateToISO8601(Now()));
+				if FileExists('projects/' + ID + '/' + JDate.AsString + '/metadata.json') then
+				begin
+					FS := TFileStream.Create('projects/' + ID + '/' + JDate.AsString + '/metadata.json', fmOpenRead);
 
-				AssignFile(InfoJSON, 'projects/' + ID + '/' + JDate.AsString + '/metadata.json');
-				Rewrite(InfoJSON);
-				Write(InfoJSON, JObj.AsJSON);
-				CloseFile(InfoJSON);
+					JMeta := GetJSON(FS);
+					JMetaFound := JMeta.FindPath('notFound');
 
-				JMeta.Free();
+					Skip := true;
+					if Assigned(JMetaFound) then
+					begin
+						if not(JMetaFound.AsBoolean) then Skip := false;
+					end;
 
-				WriteLn('[' + ID + '] Got project token');
-				CrawlProjectGet(ID, JDate.AsString, JToken.AsString);
+					if Skip then WriteLn('[' + ID + '] Project has been scraped already - ignoring');
+						
+					FS.Free();
+				end;
+
+				if not(Skip) then
+				begin
+					AssignFile(MetaJSON, 'projects/' + ID + '/' + JDate.AsString + '/info.json');
+					Rewrite(MetaJSON);
+					Write(MetaJSON, JStr);
+					CloseFile(MetaJSON);
+
+					WriteLn('[' + ID + '] Got project token');
+					CrawlProjectGet(ID, JDate.AsString, JToken.AsString);
+
+					JMeta := GetJSON('{}');
+					JObj := JMeta as TJSONObject;
+					JObj.Add('scrapedAt', DateToISO8601(Now()));
+
+					AssignFile(InfoJSON, 'projects/' + ID + '/' + JDate.AsString + '/metadata.json');
+					Rewrite(InfoJSON);
+					Write(InfoJSON, JObj.AsJSON);
+					CloseFile(InfoJSON);
+
+					JMeta.Free();
+				end;
 			end
 			else
 			begin
