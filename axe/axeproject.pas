@@ -54,6 +54,7 @@ begin
 					except
 						WriteLn(StdErr, '[' + ID + '] Failed to get ' + JMD5Ext.AsString + ' - retrying');
 						FS.Free();
+						raise;
 						continue;
 					end;
 					FS.Free();
@@ -85,7 +86,6 @@ begin
 		try JStr := TFPHTTPClient.SimpleGet('https://projects.scratch.mit.edu/' + ID + '?token=' + Token);
 		except
 			WriteLn(StdErr, '[' + ID + '] Failed to get project.json - retrying');
-			raise;
 			continue;
 		end;
 		break;
