@@ -41,7 +41,7 @@ var
 	JObj : TJSONObject;
 begin
 {$ifndef DATABASE}
-	Exit();
+	Exit;
 {$endif}
 
 	JData := GetJSON('{}');

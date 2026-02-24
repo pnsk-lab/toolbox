@@ -42,17 +42,25 @@ begin
 						break;
 					end;
 
-					FS := TFileStream.Create('assets/' + JMD5Ext.AsString, fmCreate or fmOpenWrite or fmShareExclusive);
+					while true do
+					begin
+						try FS := TFileStream.Create('assets/' + JMD5Ext.AsString, fmCreate or fmOpenWrite or fmShareExclusive);
+						except
+							continue;
+						end;
+						break;
+					end;
 					try TFPHTTPClient.SimpleGet('https://cdn.assets.scratch.mit.edu/internalapi/asset/' + JMD5Ext.AsString + '/get', FS);
 					except
 						WriteLn(StdErr, '[' + ID + '] Failed to get ' + JMD5Ext.AsString + ' - retrying');
 						FS.Free();
-						continue;	
+						continue;
 					end;
 					FS.Free();
+
+					WriteLn(StdErr, '[' + ID + '] Got ' + Copy(IterationName, 0, Length(IterationName) - 1) + ' ' + JMD5Ext.AsString);
 					break;
 				end;
-				WriteLn(StdErr, '[' + ID + '] Got ' + Copy(IterationName, 0, Length(IterationName) - 1) + ' ' + JMD5Ext.AsString);
 			end;
 		end;
 	end;
@@ -85,7 +93,7 @@ begin
 		JData := GetJSON(JStr, false);
 	except
 		AxeProjectGet := false;
-		Exit();
+		Exit;
 	end;
 
 	WriteLn(StdErr, '[' + ID + '] Got project.json');

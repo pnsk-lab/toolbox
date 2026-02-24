@@ -19,7 +19,7 @@ begin
 	InitSSLInterface();
 
 {$ifdef DATABASE}
-	AxeDatabaseConnect(GetEnv('AXE_SOLR_HOSTNAME'), GetEnv('AXE_SOLR_PORT'));
+	AxeDatabaseConnect(GetEnv('TOOLBOX_SOLR_HOSTNAME'), GetEnv('TOOLBOX_SOLR_PORT'));
 {$endif}
 
 	while I < ParamCount do
