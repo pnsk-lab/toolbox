@@ -55,6 +55,7 @@ begin
 						WriteLn(StdErr, '[' + ID + '] Failed to get ' + JMD5Ext.AsString + ' - retrying');
 						FS.Free();
 						continue;
+						raise;
 					end;
 					FS.Free();
 
