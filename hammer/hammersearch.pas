@@ -53,7 +53,7 @@ begin
 		if (I mod 4) = 0 then S := S + '<tr height="225">' + #13#10;
 		S := S + '	<td width="25%">' + #13#10;
 		S := S + '		<table border="0" cellspacing="0" cellpadding="0" width="100%" height="100%">' + #13#10;
-		S := S + '			<tr>' + #13#10;
+		S := S + '			<tr height="150">' + #13#10;
 		S := S + '				<td valign="top" align="center">' + #13#10;
 		S := S + '					<img src="/data/' + GetThumbnail(R[I]) + '" alt="Thumbnail" width="200px">' + #13#10;
 		S := S + '				</td>' + #13#10;
