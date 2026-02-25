@@ -166,9 +166,11 @@ begin
 
 	SetLength(Stack, 1);
 
-	// if it's 0 - false
-	//         1 - true
-	//         2 - skip below
+	{
+		if it's 0 - false
+		        1 - true
+		        2 - skip below
+	}
 	Stack[0] := 1;
 	HammerSideProcess := '';
 	for I := 0 to Length(Lines) - 1 do

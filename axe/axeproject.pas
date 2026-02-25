@@ -16,12 +16,24 @@ uses
 	AxeDatabase,
 	AxeUtility;
 
-procedure ProjectTargetIteration(ID : String; JTarget : TJSONData; IterationName : String);
+{
+	1 means it's ok
+	2 means it should be aborted
+}
+function ProjectTargetIteration(ID : String; JTarget : TJSONData; IterationName : String) : Integer;
 var
 	JIterations, JIteration, JMD5Ext : TJSONData;
 	I : Integer;
 	FS : TFileStream;
 begin
+	ProjectTargetIteration := 1;
+
+	if AxeUtilityShutdown then
+	begin
+		ProjectTargetIteration := 2;
+		exit;
+	end;
+
 	JIterations := JTarget.FindPath(IterationName);
 
 	if Assigned(JIterations) then
@@ -62,17 +74,35 @@ begin
 					WriteLn(StdErr, '[' + ID + '] Got ' + Copy(IterationName, 0, Length(IterationName) - 1) + ' ' + JMD5Ext.AsString);
 					break;
 				end;
+
+				if AxeUtilityShutdown then
+				begin
+					ProjectTargetIteration := 2;
+					exit;
+				end;
 			end;
 		end;
 	end;
 end;
 
-procedure ProjectTarget(ID : String; JTarget : TJSONData);
+{
+	1 means it's ok
+	2 means it should be aborted
+}
+function ProjectTarget(ID : String; JTarget : TJSONData) : Integer;
 begin
-	ProjectTargetIteration(ID, JTarget, 'costumes');
-	ProjectTargetIteration(ID, JTarget, 'sounds');
+	ProjectTarget := 1;
+
+	if (ProjectTarget = 1) and (ProjectTargetIteration(ID, JTarget, 'costumes') = 2) then ProjectTarget := 2;
+	if (ProjectTarget = 1) and (ProjectTargetIteration(ID, JTarget, 'sounds') = 2) then ProjectTarget := 2;
 end;
 
+{
+	0 means it got error project
+	1 means it's ok
+	2 means token should be refetched
+	3 means it should be aborted
+}
 function AxeProjectGet(ID : String; DT : String; Token: String) : Integer;
 var
 	JStr : String;
@@ -124,6 +154,13 @@ begin
 	Write(ProjectJSON, JStr);
 	CloseFile(ProjectJSON);
 
+	if AxeUtilityShutdown then
+	begin
+		AxeProjectGet := 3;
+		JData.Free();
+		exit;
+	end;
+
 	JTargets := JData.FindPath('targets');
 	if Assigned(JTargets) then
 	begin
@@ -131,7 +168,12 @@ begin
 		begin
 			JTarget := JTargets.Items[I];
 			
-			ProjectTarget(ID, JTarget);
+			if ProjectTarget(ID, JTarget) = 2 then
+			begin
+				AxeProjectGet := 3;
+				JData.Free();
+				exit;
+			end;
 		end;
 	end;
 	
@@ -198,6 +240,12 @@ begin
 			break;
 		end;
 		JData := GetJSON(JStr, false);
+
+		if AxeUtilityShutdown then
+		begin
+			JData.Free();
+			exit;
+		end;
 	
 		JToken := JData.FindPath('project_token');
 		if Assigned(JToken) then
@@ -252,6 +300,12 @@ begin
 					end;
 	
 					Skip := false;
+
+					if AxeUtilityShutdown then
+					begin
+						JData.Free();
+						exit;
+					end;
 	
 					JImage := JObj.FindPath('images.282x218');
 					if Assigned(JImage) then
@@ -326,9 +380,13 @@ begin
 						end
 						else if RetValue = 2 then
 						begin
-							JMeta.Free();
 							JData.Free();
 							continue;
+						end
+						else if RetValue = 3 then
+						begin
+							JData.Free();
+							exit;
 						end;
 	
 						JMeta.Free();

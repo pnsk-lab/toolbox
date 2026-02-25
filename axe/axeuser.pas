@@ -104,8 +104,8 @@ begin
 		Thread.Params := Params[I];
 		Thread.Start();
 
+		while not(AxeUtilityShutdown) and (ThreadFinished = 0) do;
 		if AxeUtilityShutdown then break;
-		while ThreadFinished = 0 do;
 	end;
 	while not(ThreadFinished = MaxThreads) do;
 end;
