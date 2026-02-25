@@ -11,7 +11,8 @@ uses
 	jsonparser,
 	sysutils,
 	classes,
-	AxeProject;
+	AxeProject,
+	AxeUtility;
 
 type
 	TThreadParams = record
@@ -103,6 +104,7 @@ begin
 		Thread.Params := Params[I];
 		Thread.Start();
 
+		if AxeUtilityShutdown then break;
 		while ThreadFinished = 0 do;
 	end;
 	while not(ThreadFinished = MaxThreads) do;

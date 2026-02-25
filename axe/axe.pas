@@ -3,13 +3,22 @@ program crawl;
 uses
 {$ifdef unix}
 	cthreads,
+	baseunix,
 {$endif}
 	openssl,
 	sysutils,
 	dos,
 	AxeProject,
 	AxeUser,
-	AxeDatabase;
+	AxeDatabase,
+	AxeUtility;
+
+{$ifdef unix}
+procedure SafeShutdown(Sig : cint); cdecl;
+begin
+	AxeUtilityShutdown := true;
+end;
+{$endif}
 
 var
 	I : Integer;
@@ -18,9 +27,15 @@ begin
 
 	InitSSLInterface();
 
+{$ifdef unix}
+	FpSignal(SIGINT, @SafeShutdown);
+	FpSignal(SIGTERM, @SafeShutdown);
+{$endif}
 {$ifdef DATABASE}
 	AxeDatabaseConnect(GetEnv('TOOLBOX_SOLR_HOSTNAME'), GetEnv('TOOLBOX_SOLR_PORT'));
 {$endif}
+
+	AxeUtilityShutdown := false;
 
 	while I < ParamCount do
 	begin
@@ -39,6 +54,7 @@ begin
 		begin
 			AxeProjectGet(ParamStr(I));
 		end;
+		if AxeUtilityShutdown then break;
 
 		I := I + 1;
 	end;

@@ -1,6 +1,9 @@
 unit AxeUtility;
 
 interface
+var
+	AxeUtilityShutdown : Boolean;
+
 function AxeUtilityGetExtension(URL : String) : String;
 
 implementation
