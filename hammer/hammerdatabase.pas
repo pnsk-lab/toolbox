@@ -39,11 +39,53 @@ begin
 	DBPort := Port;
 end;
 
-function Escape(Query : String) : String;
+function Escape(Field : String; Query : String) : String;
+var
+	I : Integer;
+	S : String;
+	DQ : Boolean;
+	E : String;
+	Esc : Boolean;
 begin
-	Escape := Query;
-	Escape := StringReplace(Escape, '\', '\\', [rfReplaceAll]);
-	Escape := StringReplace(Escape, '"', '\"', [rfReplaceAll]);
+	E := Query;
+
+	Escape := '';
+
+	DQ := false;
+	S := '';
+	Esc := false;
+	for I := 1 to Length(E) + 1 do
+	begin
+		if not(I = (Length(E) + 1)) and Esc then
+		begin
+			S := S + Copy(E, I, 1);
+
+			Esc := false;
+			continue;
+		end;
+
+		if (I = (Length(E) + 1)) or (not(DQ) and (Copy(E, I, 1) = ' ')) then
+		begin
+			S := StringReplace(S, '"', '\\', [rfReplaceAll]);
+			S := StringReplace(S, '"', '\"', [rfReplaceAll]);
+
+			Escape := Escape + Field + ':"' + S + '" ';
+
+			S := '';
+		end
+		else if Copy(E, I, 1) = '\' then
+		begin
+			Esc := true;
+		end
+		else if Copy(E, I, 1) = '"' then
+		begin
+			DQ := not(DQ);
+		end
+		else
+		begin
+			S := S + Copy(E, I, 1);
+		end;
+	end;
 end;
 
 function HammerDatabaseQuery(Query : String; Offset : Integer = 0; Project : Integer = -1) : THammerDatabaseEntryArray;
@@ -63,7 +105,11 @@ begin
 
 	if Project = -1 then
 	begin
-		Q := 'title:"' + Escape(Query) + '" instructions:"' + Escape(Query) + '" description:"' + Escape(Query) + '" author_search_name:"' + Escape(Query) + '"';
+		Q := '';
+		Q := Q + Escape('title', Query) + ' ';
+		Q := Q + Escape('description', Query) + ' ';
+		Q := Q + Escape('instructions', Query) + ' ';
+		Q := Q + Escape('author_search_name', Query) + ' ';
 	end
 	else
 	begin
