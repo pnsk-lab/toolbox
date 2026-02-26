@@ -11,6 +11,7 @@ type
 		AuthorID : Integer;
 		AuthorName : String;
 		Timestamp : String;
+		SharedTimestamp : String;
 	end;
 	THammerDatabaseEntryArray = Array of THammerDatabaseEntry;
 
@@ -145,6 +146,10 @@ begin
 			JItem := JObj.FindPath('timestamp');
 			JSONToRecord[I].Timestamp := '';
 			if Assigned(JItem) then JSONToRecord[I].Timestamp := JItem.AsString;
+
+			JItem := JObj.FindPath('shared_timestamp');
+			JSONToRecord[I].SharedTimestamp := '';
+			if Assigned(JItem) then JSONToRecord[I].SharedTimestamp := JItem.AsString;
 		end;
 	end;
 end;
@@ -163,6 +168,11 @@ begin
 			Client.RequestBody := TRawByteStringStream.Create(JData.AsJSON);
 			SendJSON := Client.Post('http://' + DBHostName + ':' + DBPort + '/solr/toolbox/query');
 		except
+			Client.Free();
+			continue;
+		end;
+		if not(Client.ResponseStatusCode = 200) then
+		begin
 			Client.Free();
 			continue;
 		end;
@@ -185,7 +195,7 @@ begin
 	JObj.Add('query', 'project_id:' + IntToStr(Project));
 	JObj.Add('limit', HammerDatabaseMaxQuery);
 	JObj.Add('offset', Offset);
-	JObj.Add('sort', 'timestamp desc');
+	JObj.Add('sort', 'shared_timestamp desc');
 
 	JStr := SendJSON(JData);
 
@@ -217,7 +227,7 @@ begin
 	JObj.Add('query', Q);
 	JObj.Add('limit', HammerDatabaseMaxQuery);
 	JObj.Add('offset', Offset);
-	JObj.Add('sort', 'timestamp desc');
+	JObj.Add('sort', 'shared_timestamp desc');
 
 	JStr := SendJSON(JData);
 
@@ -242,7 +252,7 @@ begin
 	JObj.Add('query', 'author_name:"' + EscapeSimple(UserName) + '"');
 	JObj.Add('limit', HammerDatabaseMaxQuery);
 	JObj.Add('offset', Offset);
-	JObj.Add('sort', 'timestamp desc');
+	JObj.Add('sort', 'shared_timestamp desc');
 
 	JStr := SendJSON(JData);
 

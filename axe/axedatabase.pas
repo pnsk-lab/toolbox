@@ -10,6 +10,7 @@ type
 		AuthorID : Integer;
 		AuthorName : String;
 		Timestamp : String;
+		SharedTimestamp : String;
 	end;
 
 procedure AxeDatabaseConnect(HostName : String; Port : String);
@@ -101,6 +102,7 @@ begin
 	JObj.Add('author_name', Entry.AuthorName);
 	JObj.Add('author_search_name', Entry.AuthorName);
 	JObj.Add('timestamp', Entry.Timestamp);
+	JObj.Add('shared_timestamp', Entry.SharedTimestamp);
 
 	while true do
 	begin

@@ -47,7 +47,7 @@ begin
 
 	HammerInfoDirectory := '';
 	HammerDatabaseConnect(GetEnv('TOOLBOX_SOLR_HOSTNAME'), GetEnv('TOOLBOX_SOLR_PORT'));
-	while I < ParamCount do
+	while I <= ParamCount do
 	begin
 		if ParamStr(I) = '--directory' then
 		begin

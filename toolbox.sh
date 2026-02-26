@@ -41,7 +41,8 @@ elif [ "x$1" = "xsetup" ]; then
 			{"name": "author_id", "type": "pint"},
 			{"name": "author_name", "type": "string"},
 			{"name": "author_search_name", "type": "text_general", "multiValued": false},
-			{"name": "timestamp", "type": "string"}
+			{"name": "timestamp", "type": "string"},
+			{"name": "shared_timestamp", "type": "string"}
 		]
 	}' >/dev/null 2>&1; then
 		:

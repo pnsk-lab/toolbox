@@ -42,6 +42,7 @@ var
 	S, S2 : String;
 	Pages : Integer;
 begin
+	P := 1;
 	U := '';
 
 	if not(Query.IndexOf('u') = -1) then U := Query['u'];

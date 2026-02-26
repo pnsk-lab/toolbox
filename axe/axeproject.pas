@@ -369,6 +369,11 @@ begin
 						Entry.Timestamp := JObj.Objects['history'].Strings['modified'];
 						N := N + 1;
 					end;
+					if Assigned(JObj.FindPath('history.shared')) then
+					begin
+						Entry.SharedTimestamp := JObj.Objects['history'].Strings['shared'];
+						N := N + 1;
+					end;
 	
 					Skip := false;
 
@@ -403,7 +408,7 @@ begin
 	
 						if Skip then
 						begin
-							if N = 7 then
+							if N = 8 then
 							begin
 								AxeDatabaseAdd(Entry, False);
 							end;
