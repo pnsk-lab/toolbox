@@ -18,7 +18,9 @@ const
 	HammerDatabaseMaxQuery : Integer = 20;
 
 procedure HammerDatabaseConnect(HostName : String; Port : String);
-function HammerDatabaseQuery(Query : String; Offset : Integer = 0; Project : Integer = -1) : THammerDatabaseEntryArray;
+function HammerDatabaseQuery(Project : Integer; Offset : Integer = 0) : THammerDatabaseEntryArray;
+function HammerDatabaseQuery(Query : String; Offset : Integer = 0) : THammerDatabaseEntryArray;
+function HammerDatabaseQueryUserName(UserName : String; Offset : Integer = 0) : THammerDatabaseEntryArray;
 
 implementation
 uses
@@ -37,6 +39,13 @@ procedure HammerDatabaseConnect(HostName : String; Port : String);
 begin
 	DBHostName := HostName;
 	DBPort := Port;
+end;
+
+function EscapeSimple(Value : String) : String;
+begin
+	EscapeSimple := Value;
+	EscapeSimple := StringReplace(EscapeSimple, '"', '\\', [rfReplaceAll]);
+	EscapeSimple := StringReplace(EscapeSimple, '"', '\"', [rfReplaceAll]);
 end;
 
 function Escape(Field : String; Query : String) : String;
@@ -66,9 +75,6 @@ begin
 
 		if (I = (Length(E) + 1)) or (not(DQ) and (Copy(E, I, 1) = ' ')) then
 		begin
-			S := StringReplace(S, '"', '\\', [rfReplaceAll]);
-			S := StringReplace(S, '"', '\"', [rfReplaceAll]);
-
 			Escape := Escape + Field + ':"' + S + '" ';
 
 			S := '';
@@ -88,57 +94,15 @@ begin
 	end;
 end;
 
-function HammerDatabaseQuery(Query : String; Offset : Integer = 0; Project : Integer = -1) : THammerDatabaseEntryArray;
+function JSONToRecord(JData : TJSONData) : THammerDatabaseEntryArray;
 var
-	Client : TFPHTTPClient;
-	JStr : String;
-	JData, JItem, TNumFound : TJSONData;
+	JItem, TNumFound : TJSONData;
 	JObj : TJSONObject;
 	JArr : TJSONArray;
-	Q : String;
 	I : Integer;
 begin
-	HammerDatabaseQuery := [];
-
-	JData := GetJSON('{}');
-	JObj := JData as TJSONObject;
-
-	if Project = -1 then
-	begin
-		Q := '';
-		Q := Q + Escape('title', Query) + ' ';
-		Q := Q + Escape('description', Query) + ' ';
-		Q := Q + Escape('instructions', Query) + ' ';
-		Q := Q + Escape('author_search_name', Query) + ' ';
-	end
-	else
-	begin
-		Q := 'project_id:' + IntToStr(Project);
-	end;
-
-	JObj.Add('query', Q);
-	JObj.Add('limit', HammerDatabaseMaxQuery);
-	JObj.Add('offset', Offset);
-	JObj.Add('sort', 'timestamp desc');
-
-	while true do
-	begin
-		Client := TFPHTTPClient.Create(nil);
-		try
-			Client.AddHeader('Content-Type', 'application/json');
-			Client.RequestBody := TRawByteStringStream.Create(JData.AsJSON);
-			JStr := Client.Post('http://' + DBHostName + ':' + DBPort + '/solr/toolbox/query');
-		except
-			Client.Free();
-			continue;
-		end;
-		Client.Free();
-		break;
-	end;
-
-	JData.Free();
-
-	JData := GetJSON(JStr, false);
+	JSONToRecord := [];
+	
 	JObj := JData as TJSONObject;
 
 	JArr := JObj.FindPath('response.docs') as TJSONArray;
@@ -146,42 +110,144 @@ begin
 	begin
 		TNumFound := JObj.FindPath('response.numFound');
 
-		SetLength(HammerDatabaseQuery, JArr.Count);
+		SetLength(JSONToRecord, JArr.Count);
 
 		for I := 0 to JArr.Count - 1 do
 		begin
 			JObj := JArr.Items[I] as TJSONObject;
 
-			if Assigned(TNumFound) then HammerDatabaseQuery[I].NumFound := TNumFound.AsInteger;
+			if Assigned(TNumFound) then JSONToRecord[I].NumFound := TNumFound.AsInteger;
 
-			HammerDatabaseQuery[I].ProjectID := JObj.FindPath('project_id').AsInteger;
+			JSONToRecord[I].ProjectID := JObj.FindPath('project_id').AsInteger;
 
 			JItem := JObj.FindPath('title');
-			HammerDatabaseQuery[I].Title := '';
-			if Assigned(JItem) then HammerDatabaseQuery[I].Title := JObj.FindPath('title').AsString;
+			JSONToRecord[I].Title := '';
+			if Assigned(JItem) then JSONToRecord[I].Title := JObj.FindPath('title').AsString;
 
 			JItem := JObj.FindPath('description');
-			HammerDatabaseQuery[I].Description := '';
-			if Assigned(JItem) then HammerDatabaseQuery[I].Description := JItem.AsString;
+			JSONToRecord[I].Description := '';
+			if Assigned(JItem) then JSONToRecord[I].Description := JItem.AsString;
 
 			JItem := JObj.FindPath('instructions');
-			HammerDatabaseQuery[I].Instructions := '';
-			if Assigned(JItem) then HammerDatabaseQuery[I].Instructions := JItem.AsString;
+			JSONToRecord[I].Instructions := '';
+			if Assigned(JItem) then JSONToRecord[I].Instructions := JItem.AsString;
 
 			JItem := JObj.FindPath('author_id');
-			HammerDatabaseQuery[I].AuthorID := 0;
-			if Assigned(JItem) then HammerDatabaseQuery[I].AuthorID := JItem.AsInteger;
+			JSONToRecord[I].AuthorID := 0;
+			if Assigned(JItem) then JSONToRecord[I].AuthorID := JItem.AsInteger;
 
 			JItem := JObj.FindPath('author_name');
-			HammerDatabaseQuery[I].AuthorName := '';
-			if Assigned(JItem) then HammerDatabaseQuery[I].AuthorName := JItem.AsString;
+			JSONToRecord[I].AuthorName := '';
+			if Assigned(JItem) then JSONToRecord[I].AuthorName := JItem.AsString;
 
 			JItem := JObj.FindPath('timestamp');
-			HammerDatabaseQuery[I].Timestamp := '';
-			if Assigned(JItem) then HammerDatabaseQuery[I].Timestamp := JItem.AsString;
+			JSONToRecord[I].Timestamp := '';
+			if Assigned(JItem) then JSONToRecord[I].Timestamp := JItem.AsString;
 		end;
 	end;
+end;
 
+function SendJSON(JData : TJSONData) : String;
+var
+	Client : TFPHTTPClient;
+begin
+	SendJSON := '';
+
+	while true do
+	begin
+		Client := TFPHTTPClient.Create(nil);
+		try
+			Client.AddHeader('Content-Type', 'application/json');
+			Client.RequestBody := TRawByteStringStream.Create(JData.AsJSON);
+			SendJSON := Client.Post('http://' + DBHostName + ':' + DBPort + '/solr/toolbox/query');
+		except
+			Client.Free();
+			continue;
+		end;
+		Client.Free();
+		break;
+	end;
+end;
+
+function HammerDatabaseQuery(Project : Integer; Offset : Integer = 0) : THammerDatabaseEntryArray;
+var
+	JStr : String;
+	JData : TJSONData;
+	JObj : TJSONObject;
+begin
+	HammerDatabaseQuery := [];
+
+	JData := GetJSON('{}');
+	JObj := JData as TJSONObject;
+
+	JObj.Add('query', 'project_id:' + IntToStr(Project));
+	JObj.Add('limit', HammerDatabaseMaxQuery);
+	JObj.Add('offset', Offset);
+	JObj.Add('sort', 'timestamp desc');
+
+	JStr := SendJSON(JData);
+
+	JData.Free();
+
+	JData := GetJSON(JStr, false);
+	HammerDatabaseQuery := JSONToRecord(JData);
+	JData.Free();
+end;
+
+function HammerDatabaseQuery(Query : String; Offset : Integer = 0) : THammerDatabaseEntryArray;
+var
+	JStr : String;
+	JData : TJSONData;
+	JObj : TJSONObject;
+	Q : String;
+begin
+	HammerDatabaseQuery := [];
+
+	JData := GetJSON('{}');
+	JObj := JData as TJSONObject;
+
+	Q := '';
+	Q := Q + Escape('title', Query) + ' ';
+	Q := Q + Escape('description', Query) + ' ';
+	Q := Q + Escape('instructions', Query) + ' ';
+	Q := Q + Escape('author_search_name', Query) + ' ';
+
+	JObj.Add('query', Q);
+	JObj.Add('limit', HammerDatabaseMaxQuery);
+	JObj.Add('offset', Offset);
+	JObj.Add('sort', 'timestamp desc');
+
+	JStr := SendJSON(JData);
+
+	JData.Free();
+
+	JData := GetJSON(JStr, false);
+	HammerDatabaseQuery := JSONToRecord(JData);
+	JData.Free();
+end;
+
+function HammerDatabaseQueryUserName(UserName : String; Offset : Integer = 0) : THammerDatabaseEntryArray;
+var
+	JStr : String;
+	JData : TJSONData;
+	JObj : TJSONObject;
+begin
+	HammerDatabaseQueryUserName := [];
+
+	JData := GetJSON('{}');
+	JObj := JData as TJSONObject;
+
+	JObj.Add('query', 'author_name:"' + EscapeSimple(UserName) + '"');
+	JObj.Add('limit', HammerDatabaseMaxQuery);
+	JObj.Add('offset', Offset);
+	JObj.Add('sort', 'timestamp desc');
+
+	JStr := SendJSON(JData);
+
+	JData.Free();
+
+	JData := GetJSON(JStr, false);
+	HammerDatabaseQueryUserName := JSONToRecord(JData);
 	JData.Free();
 end;
 

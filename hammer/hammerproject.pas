@@ -24,7 +24,7 @@ begin
 	except
 	end;
 
-	Arr := HammerDatabaseQuery('', 0, P);
+	Arr := HammerDatabaseQuery(P);
 
 	if Length(Arr) > 0 then
 	begin
