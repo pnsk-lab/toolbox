@@ -42,6 +42,11 @@
 </div>
 
 <div class="section">Projects</div>
+<!--#if expr="$SEARCH_RESULT = ''" -->
+<p>
+	No projects were found.
+</p>
+<!--#else -->
 <div>
 	<br>
 	<table border="0" width="100%" cellspacing="0" cellpadding="0">
@@ -49,6 +54,7 @@
 	</table>
 	<br>
 </div>
+<!--#endif -->
 
 <p align="center">
 <!--#echo var="USER_PAGES" -->
