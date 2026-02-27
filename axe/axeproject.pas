@@ -243,7 +243,7 @@ end;
 
 procedure GetThumbnail(ID : String; Dest : String; URL : String);
 var
-	HTTP : TFPHTTPClient;
+	Client : TFPHTTPClient;
 	FS : TFileStream;
 begin
 	while true do
@@ -256,12 +256,12 @@ begin
 			end;
 			break;
 		end;
-		HTTP := TFPHTTPClient.Create(nil);
-		HTTP.AllowRedirect := true;
-		try HTTP.Get(URL, FS);
+		Client := TFPHTTPClient.Create(nil);
+		Client.AllowRedirect := true;
+		try Client.Get(URL, FS);
 		except
 			WriteLn(StdErr, '[' + ID + '] Failed to get thumbnail - retrying');
-			HTTP.Free();
+			Client.Free();
 			FS.Free();
 
 			if AxeUtilityShutdown then
@@ -271,7 +271,7 @@ begin
 			end;
 			continue;
 		end;
-		HTTP.Free();
+		Client.Free();
 		FS.Free();
 		WriteLn(StdErr, '[' + ID + '] Got thumbnail');
 		break;

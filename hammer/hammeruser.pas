@@ -11,6 +11,9 @@ procedure HammerUserProcess(Vars : THammerStringMap; Query : THammerStringMap; R
 implementation
 uses
 	sysutils,
+	fpjson,
+	jsonparser,
+	classes,
 	HammerDatabase;
 
 function GetThumbnail(Entry : THammerDatabaseEntry) : String;
@@ -34,6 +37,27 @@ begin
 	end;
 end;
 
+function GetIcon(User : String) : String;
+const
+	TryThem : Array of String = ('png', 'gif', 'jpg', 'jpeg');
+var
+	I : Integer;
+	Path : String;
+begin
+	GetIcon := '';
+
+	for I := 0 to Length(TryThem) - 1 do
+	begin
+		Path := HammerInfoDirectory + '/users/' + User + '/icon.' + TryThem[I];
+
+		if FileExists(Path) then
+		begin
+			GetIcon := HammerInfoDirectory + '/users/' + User + '/icon.' + TryThem[I];
+			exit;
+		end;
+	end;
+end;
+
 procedure HammerUserProcess(Vars : THammerStringMap; Query : THammerStringMap; Req : TRequest; Res : TResponse);
 var
 	U : String;
@@ -41,6 +65,8 @@ var
 	I, P : Integer;
 	S, S2 : String;
 	Pages : Integer;
+	FS : TFileStream;
+	JData, JItem : TJSONData;
 begin
 	P := 1;
 	U := '';
@@ -85,6 +111,21 @@ begin
 	for I := (I mod 4) + 1 to 3 do S := S + '<td width="25%"></td>' + #13#10;
 	if not((I mod 4) = 3) then S := S + '</tr>' + #13#10;
 	Vars['USER_RESULT'] := S;
+	Vars['USER_ICON'] := GetIcon(U);
+
+	FS := TFileStream.Create(HammerInfoDirectory + '/users/' + U + '/info.json', fmOpenRead or fmShareDenyWrite);
+	if Assigned(FS) then
+	begin
+		JData := GetJSON(FS, false);
+
+		JItem := JData.FindPath('profile.bio');
+		if Assigned(JItem) then Vars['USER_BIO'] := JItem.AsString;
+		JItem := JData.FindPath('profile.status');
+		if Assigned(JItem) then Vars['USER_STATUS'] := JItem.AsString;
+
+		JData.Free();
+		FS.Free();
+	end;
 
 	S2 := '';
 	if Length(R) > 0 then

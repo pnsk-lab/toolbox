@@ -45,16 +45,82 @@ end;
 procedure AxeUserGet(UserName : String);
 var
 	JStr : String;
-	JData, JItem, JID : TJSONData;
+	JData, JImage, JItem, JID : TJSONData;
 	N : Integer;
 	I : Integer;
 	Param : PThreadParams;
 	Params : Array of PThreadParams;
 	Thread : TProjectThread;
+	TF : TextFile;
+	FS : TFileStream;
+	Path : String;
+	Client : TFPHTTPClient;
 begin
 	N := 0;
 
 	SetLength(Params, 0);
+
+	WriteLn(StdErr, '[' + UserName + '] Getting metadata');
+	while true do
+	begin
+		try JStr := TFPHTTPClient.SimpleGet('https://api.scratch.mit.edu/users/' + UserName);
+		except
+			on E : EHTTPClient do
+			begin
+				exit;
+			end;
+			on E : Exception do
+			begin
+				continue;
+			end;
+		end;
+		break;
+	end;
+	
+	CreateDir('users');
+	CreateDir('users/' + UserName);
+
+	AssignFile(TF, 'users/' + UserName + '/info.json');
+	Rewrite(TF);
+	Write(TF, JStr);
+	CloseFile(TF);
+
+	JData := GetJSON(JStr, false);
+
+	JImage := JData.FindPath('profile.images.90x90');
+	if Assigned(JImage) then
+	begin
+		WriteLn(StdErr, '[' + UserName + '] Getting icon');
+		Path := 'users/' + UserName + '/icon.' + AxeUtilityGetExtension(JImage.AsString);
+		while true do
+		begin
+			FS := TFileStream.Create(Path, fmCreate or fmOpenWrite);
+			Client := TFPHTTPClient.Create(nil);
+			Client.AllowRedirect := true;
+			try Client.Get(JImage.AsString, FS);
+			except
+				on E : EHTTPClient do
+				begin
+					FS.Free();
+					Client.Free();
+					DeleteFile(Path);
+					exit;
+				end;
+				on E : Exception do
+				begin
+					FS.Free();
+					Client.Free();
+					DeleteFile(Path);
+					continue;
+				end;
+			end;
+			FS.Free();
+			Client.Free();
+			break;
+		end;
+	end;
+		
+	JData.Free();
 
 	WriteLn(StdErr, '[' + UserName + '] Populating...');
 	while true do

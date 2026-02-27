@@ -52,7 +52,7 @@ begin
 		if ParamStr(I) = '--directory' then
 		begin
 			I := I + 1;
-			HammerInfoDirectory := ParamStr(I) + '/';
+			HammerInfoDirectory := ParamStr(I);
 		end;
 
 		I := I + 1;
@@ -61,6 +61,7 @@ begin
 	HTTPRouter.RegisterRoute('/', @HammerRootRoute, true);
 	HTTPRouter.RegisterRoute('/data/assets/:file', @HammerDataAssetsRoute);
 	HTTPRouter.RegisterRoute('/data/projects/:id/:timestamp/:file', @HammerDataProjectsRoute);
+	HTTPRouter.RegisterRoute('/data/users/:user/:file', @HammerDataUsersRoute);
 	HTTPRouter.RegisterRoute('/static/:file', @HammerStaticRoute);
 
 	Application.Port := StrToInt(GetEnv('TOOLBOX_HAMMER_PORT'));
