@@ -113,9 +113,8 @@ begin
 	Vars['USER_RESULT'] := S;
 	Vars['USER_ICON'] := GetIcon(U);
 
-	FS := TFileStream.Create(HammerInfoDirectory + '/users/' + U + '/info.json', fmOpenRead or fmShareDenyWrite);
-	if Assigned(FS) then
-	begin
+	try
+		FS := TFileStream.Create(HammerInfoDirectory + '/users/' + U + '/info.json', fmOpenRead or fmShareDenyWrite);
 		JData := GetJSON(FS, false);
 
 		JItem := JData.FindPath('profile.bio');
@@ -125,6 +124,7 @@ begin
 
 		JData.Free();
 		FS.Free();
+	except
 	end;
 
 	S2 := '';
