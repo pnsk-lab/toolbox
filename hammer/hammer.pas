@@ -45,6 +45,8 @@ begin
 	FpSignal(SIGPIPE, SignalHandler(SIG_IGN));
 	{$endif}
 
+	Randomize();
+
 	HammerInfoDirectory := '';
 	HammerDatabaseConnect(GetEnv('TOOLBOX_SOLR_HOSTNAME'), GetEnv('TOOLBOX_SOLR_PORT'));
 	while I <= ParamCount do

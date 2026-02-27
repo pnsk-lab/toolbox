@@ -277,7 +277,7 @@ begin
 	JObj.Add('query', '*:*');
 	JObj.Add('limit', 1);
 	JObj.Add('offset', 0);
-	JObj.Add('sort', 'random_' + IntToStr(DateTimeToUnix(Now())) + ' desc');
+	JObj.Add('sort', 'random_' + IntToStr(Random(DateTimeToUnix(Now()))) + ' desc');
 
 	JStr := SendJSON(JData);
 
