@@ -59,7 +59,7 @@ a:hover, #breadcrumb a:hover {
 	font-weight: bold;
 }
 
-#content p {
+#content div.sentence {
 	padding-left: 8px;
 }
 
