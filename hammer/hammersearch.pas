@@ -38,7 +38,7 @@ procedure HammerSearchProcess(Vars : THammerStringMap; Query : THammerStringMap;
 var
 	Q: String;
 	R : THammerDatabaseEntryArray;
-	I, P : Integer;
+	I, P, O : Integer;
 	S, S2 : String;
 	Pages : Integer;
 begin
@@ -87,8 +87,12 @@ begin
 			S := S + '</tr>' + #13#10;
 		end;
 	end;
-	for I := (I mod 4) + 1 to 3 do S := S + '<td width="25%"></td>' + #13#10;
-	if not((I mod 4) = 3) then S := S + '</tr>' + #13#10;
+	O := I;
+	if O > 0 then
+	begin
+		for I := (O mod 4) + 1 to 3 do S := S + '<td width="25%"></td>' + #13#10;
+		if not((O mod 4) = 3) then S := S + '</tr>' + #13#10;
+	end;
 	Vars['SEARCH_RESULT'] := S;
 
 	S2 := '';
