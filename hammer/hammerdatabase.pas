@@ -286,7 +286,6 @@ begin
 
 	JStr := SendJSON(JData);
 
-	JArr.Free();
 	JData.Free();
 
 	JData := GetJSON(JStr, false);
